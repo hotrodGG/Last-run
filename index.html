@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#101820">
-<title>LAST RUN — Prototype</title>
+<title>LAST RUN — Horde Defense</title>
 <style>
 :root{--bg:#101820;--panel:#17232c;--text:#f4f7f8;--muted:#aab8bf;--lime:#b7f34a;--red:#ff5a5f}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);touch-action:none}
@@ -37,16 +37,16 @@ h1{font-size:35px;line-height:1;margin:10px 0 12px;letter-spacing:-1px}
 </div>
 <div id="healthWrap"><div id="health"></div></div>
 <div id="toast"></div>
-<div id="hint">Glisse à gauche / droite ou utilise les flèches</div>
+<div id="hint">Esquive à gauche / droite — tiens ta position</div>
 <div id="controls"><button class="ctrl" id="left">‹</button><button class="ctrl" id="right">›</button></div>
 <div id="overlay">
  <div class="card">
   <div class="logo">PROTOTYPE MOBILE</div>
   <h1>LAST<br>RUN</h1>
-  <p>La route est envahie. Avance, esquive les morts-vivants, récupère des bonus et choisis les bonnes portes pour tenir le plus longtemps possible.</p>
-  <p><b>Commandes :</b> glisse à gauche ou à droite. Le tir est automatique.</p>
+  <p>La horde arrive droit sur vous. Tenez votre position, éliminez les zombies et survivez le plus longtemps possible.</p>
+  <p><b>Commandes :</b> glissez à gauche ou à droite pour esquiver. Le personnage reste en place et tire automatiquement.</p>
   <button class="primary" id="start">LANCER LA PARTIE</button>
-  <p class="small">Prototype de gameplay — graphismes temporaires en perspective 2.5D.</p>
+  <p class="small">Défendez votre position. Les zombies avancent vers vous.</p>
  </div>
 </div>
 <script>
@@ -59,7 +59,7 @@ let enemies=[],bullets=[],gates=[],particles=[];
 const lanes=[-.58,0,.58];
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
 addEventListener('resize',resize);resize();
-function roadY(z){return H*.43+(1-z)*(H*.62)}
+function roadY(z){return H*.43+z*(H*.62)}
 function roadX(l,z){const half=(W*.44)*(0.18+z*.82);return W/2+lanes[l]*half}
 function toast(t){$('toast').textContent=t;$('toast').style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').style.opacity=0,1000)}
 function move(n){if(!running)return;lane=Math.max(0,Math.min(2,lane+n))}
@@ -75,11 +75,11 @@ function road(){
  // sky
  let g=ctx.createLinearGradient(0,0,0,H*.55);g.addColorStop(0,'#253d43');g.addColorStop(1,'#9b8d68');ctx.fillStyle=g;ctx.fillRect(0,0,W,H*.56);
  // distant silhouettes
- ctx.fillStyle='#243638';for(let i=0;i<9;i++){let x=i*W/7-30;ctx.beginPath();ctx.moveTo(x,H*.48);ctx.lineTo(x+35,H*(.27+(i%3)*.045));ctx.lineTo(x+75,H*.48);ctx.fill()}
+ ctx.fillStyle='#172b2c';for(let i=0;i<9;i++){let x=i*W/7-30;ctx.beginPath();ctx.moveTo(x,H*.48);ctx.lineTo(x+35,H*(.27+(i%3)*.045));ctx.lineTo(x+75,H*.48);ctx.fill()}
  // ground
- ctx.fillStyle='#3d493d';ctx.fillRect(0,H*.46,W,H*.54);
+ ctx.fillStyle='#303c36';ctx.fillRect(0,H*.46,W,H*.54);
  // road trapezoid
- ctx.beginPath();ctx.moveTo(W*.43,H*.43);ctx.lineTo(W*.57,H*.43);ctx.lineTo(W*.96,H);ctx.lineTo(W*.04,H);ctx.closePath();ctx.fillStyle='#424747';ctx.fill();
+ ctx.beginPath();ctx.moveTo(W*.43,H*.43);ctx.lineTo(W*.57,H*.43);ctx.lineTo(W*.96,H);ctx.lineTo(W*.04,H);ctx.closePath();ctx.fillStyle='#343b3b';ctx.fill();
  ctx.strokeStyle='#d4c99a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(W*.43,H*.43);ctx.lineTo(W*.04,H);ctx.moveTo(W*.57,H*.43);ctx.lineTo(W*.96,H);ctx.stroke();
  // lane dashed markings
  for(let l=1;l<=2;l++){let x0=W/2+(l-1.5)*W*.045,x1=W/2+(l-1.5)*W*.29;ctx.strokeStyle='#d5d0b2';ctx.lineWidth=2;ctx.setLineDash([12,18]);ctx.beginPath();ctx.moveTo(x0,H*.45);ctx.lineTo(x1,H);ctx.stroke()}ctx.setLineDash([]);
@@ -96,20 +96,21 @@ function drawZombie(x,y,s,kind=0){
  ctx.restore();
 }
 function drawPlayer(){
- let x=roadX(lane,1),y=H*.82;
+ // Le survivant reste fixe au premier plan : seuls les ennemis avancent.
+ let x=roadX(lane,.63),y=H*.82;
  // shadow
  ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(x,y+9,28,10,0,0,Math.PI*2);ctx.fill();
  // backpack/body from behind
  ctx.fillStyle=invuln>0?'#d9f36c':'#354b4b';ctx.fillRect(x-13,y-49,26,38);
- ctx.fillStyle='#b7f34a';ctx.fillRect(x-9,y-57,18,14);
+ ctx.fillStyle='#b7f34a';ctx.fillRect(x-9,y-57,18,14);ctx.fillStyle='#182729';ctx.fillRect(x-5,y-53,10,8);
  ctx.fillStyle='#253238';ctx.fillRect(x-17,y-18,11,19);ctx.fillRect(x+6,y-18,11,19);
  ctx.fillStyle='#b7c2b8';ctx.fillRect(x-18,y-4,13,5);ctx.fillRect(x+5,y-4,13,5);
  ctx.fillStyle='#d1a77c';ctx.beginPath();ctx.arc(x,y-63,10,0,Math.PI*2);ctx.fill();
  // rifle
- ctx.save();ctx.translate(x+18,y-40);ctx.rotate(-.12);ctx.fillStyle='#202a2d';ctx.fillRect(-2,-3,24,6);ctx.fillStyle='#a9b5a7';ctx.fillRect(14,-2,12,3);ctx.restore();
+ ctx.save();ctx.translate(x+18,y-40);ctx.rotate(-.12);ctx.fillStyle='#202a2d';ctx.fillRect(-2,-3,24,6);ctx.fillStyle='#a9b5a7';ctx.fillRect(14,-2,12,3);if(shot<.055){ctx.fillStyle='#fff1a6';ctx.beginPath();ctx.moveTo(26,0);ctx.lineTo(38,-7);ctx.lineTo(35,0);ctx.lineTo(38,7);ctx.closePath();ctx.fill()}ctx.restore();
 }
-function spawnZombie(){let l=Math.floor(Math.random()*3);enemies.push({lane:l,z:.04,hp:1+(wave>2?Math.floor(wave/3):0),kind:Math.random()<.18?1:0,speed:.15+Math.random()*.035})}
-function spawnGate(){let l=Math.floor(Math.random()*3),good=Math.random()>.28;gates.push({lane:l,z:.04,good,label:good?(Math.random()>.5?'+1 ARME':'+25 PV'):'-20 PV'})}
+function spawnZombie(){let l=Math.floor(Math.random()*3);enemies.push({lane:l,z:.015,hp:1+(wave>2?Math.floor(wave/3):0),kind:Math.random()<.18?1:0,speed:.115+Math.random()*.025})}
+function spawnGate(){let l=Math.floor(Math.random()*3),good=Math.random()>.28;gates.push({lane:l,z:.015,good,label:good?(Math.random()>.5?'+1 ARME':'+25 PV'):'-20 PV'})}
 function drawGate(g){let x=roadX(g.lane,g.z),y=roadY(g.z),s=.25+g.z*.8;ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle=g.good?'#a9e947':'#e65c54';ctx.globalAlpha=.9;ctx.fillRect(-39,-75,78,75);ctx.fillStyle='#17221b';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText(g.label,0,-35);ctx.restore()}
 function drawBullet(b){let x=roadX(b.lane,b.z),y=roadY(b.z);ctx.fillStyle='#d9ff75';ctx.shadowColor='#d9ff75';ctx.shadowBlur=10;ctx.fillRect(x-2,y-8,4,13);ctx.shadowBlur=0}
 function loop(now){if(!running)return;let dt=Math.min((now-last)/1000,.04);last=now;update(dt);render();if(running)requestAnimationFrame(loop)}
@@ -118,15 +119,15 @@ function update(dt){
  wave=1+Math.floor(kills/12);
  if(spawn<=0){spawnZombie();spawn=Math.max(.42,1.35-wave*.055)}
  if(gateSpawn<=0){spawnGate();gateSpawn=4.5+Math.random()*2}
- if(shot<=0){bullets.push({lane,z:.88,speed:1.25});shot=Math.max(.19,.48-(weapon-1)*.055)}
- bullets.forEach(b=>b.z-=b.speed*dt);
- enemies.forEach(e=>e.z+=e.speed*dt);
- gates.forEach(g=>g.z+=.24*dt);
+ if(shot<=0){bullets.push({lane,z:.61,speed:1.05});shot=Math.max(.19,.48-(weapon-1)*.055)}
+ bullets.forEach(b=>b.z-=b.speed*dt); // les tirs partent du joueur vers le fond
+ enemies.forEach(e=>e.z+=e.speed*dt); // les zombies avancent vers le joueur
+ gates.forEach(g=>g.z+=.19*dt);
  // bullet hits closest zombie in same lane
- for(let b of bullets){for(let e of enemies){if(!e.dead&&e.lane===b.lane&&Math.abs(e.z-b.z)<.075){e.hp--;b.dead=true;if(e.hp<=0){e.dead=true;kills++;score+=100}break}}}
+ for(let b of bullets){for(let e of enemies){if(!e.dead&&e.lane===b.lane&&Math.abs(e.z-b.z)<.065){e.hp--;b.dead=true;if(e.hp<=0){e.dead=true;kills++;score+=100}break}}}
  // collision / gates at player depth
- for(let e of enemies){if(!e.dead&&e.z>.88&&e.z<.98&&e.lane===lane){if(invuln<=0){health-=e.kind?24:14;invuln=.8;toast('TOUCHÉ !')}e.dead=true}}
- for(let g of gates){if(!g.dead&&g.z>.88&&g.z<.98&&g.lane===lane){g.dead=true;if(g.good){if(g.label.includes('ARME')){weapon=Math.min(5,weapon+1);toast('ARME AMÉLIORÉE !')}else{health=Math.min(100,health+25);toast('+25 PV')}}else{health=Math.max(0,health-20);toast('-20 PV')}hud()}}
+ for(let e of enemies){if(!e.dead&&e.z>.59&&e.z<.69&&e.lane===lane){if(invuln<=0){health-=e.kind?24:14;invuln=.8;toast('TOUCHÉ !')}e.dead=true}}
+ for(let g of gates){if(!g.dead&&g.z>.59&&g.z<.69&&g.lane===lane){g.dead=true;if(g.good){if(g.label.includes('ARME')){weapon=Math.min(5,weapon+1);toast('ARME AMÉLIORÉE !')}else{health=Math.min(100,health+25);toast('+25 PV')}}else{health=Math.max(0,health-20);toast('-20 PV')}hud()}}
  enemies=enemies.filter(e=>!e.dead&&e.z<1.08);bullets=bullets.filter(b=>!b.dead&&b.z>0);gates=gates.filter(g=>!g.dead&&g.z<1.08);
  if(health<=0){health=0;hud();running=false;gameOver=true;showEnd()}
  hud();
